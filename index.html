@@ -700,18 +700,28 @@
     });
 
     let debounceTimer = null;
+    function triggerAnalysisWithReset() {
+      localStorage.setItem('lyrics_editor_input', lyricsInput.value);
+      analysisRetryCount = 0;
+      runAnalysis();
+    }
+
     lyricsInput.addEventListener('input', () => {
       localStorage.setItem('lyrics_editor_input', lyricsInput.value);
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
+        analysisRetryCount = 0;
         runAnalysis();
-      }, 300);
+      }, 150);
     });
 
-    analyzeBtn.addEventListener('click', () => {
-      localStorage.setItem('lyrics_editor_input', lyricsInput.value);
-      runAnalysis();
+    lyricsInput.addEventListener('paste', () => {
+      setTimeout(triggerAnalysisWithReset, 50);
     });
+
+    lyricsInput.addEventListener('change', triggerAnalysisWithReset);
+
+    analyzeBtn.addEventListener('click', triggerAnalysisWithReset);
 
     copyBtn.addEventListener('click', () => {
       navigator.clipboard.writeText(sunoOutput.value);
