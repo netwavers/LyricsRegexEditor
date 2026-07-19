@@ -75,6 +75,7 @@ class LyricsRegexEditorHandler(http.server.SimpleHTTPRequestHandler):
 
 
 def run_server(port: int = PORT):
+    socketserver.TCPServer.allow_reuse_address = True
     for p in range(port, port + 10):
         try:
             with socketserver.TCPServer(("", p), LyricsRegexEditorHandler) as httpd:
