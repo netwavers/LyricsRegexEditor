@@ -850,6 +850,14 @@
     // 初期起動時復元 ＆ 解析実行
     restoreSavedState();
     runAnalysis();
+
+    // DOM読み込み完了およびウィンドウロード時にも確実に初期解析を実行
+    document.addEventListener('DOMContentLoaded', () => {
+      triggerAnalysisWithReset();
+    });
+    window.addEventListener('load', () => {
+      triggerAnalysisWithReset();
+    });
   </script>
 </body>
 </html>
