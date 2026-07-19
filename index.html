@@ -470,8 +470,8 @@
     const toggleVowelOpt = document.getElementById('toggleVowelOpt');
 
     // トグル変化時にリアルタイム更新
-    toggleAutoSpacing.addEventListener('change', updateGeneratedText);
-    toggleVowelOpt.addEventListener('change', updateGeneratedText);
+    toggleAutoSpacing.addEventListener('change', () => updateGeneratedText());
+    toggleVowelOpt.addEventListener('change', () => updateGeneratedText());
 
     // インライン文章UI描画
     function renderInlineEditor() {
