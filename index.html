@@ -643,9 +643,19 @@
 
     // 解析APIの実行（接続エラー時の自動リトライ機能付き）
     let analysisRetryCount = 0;
+    const tokenCountBadge = document.getElementById('tokenCountBadge');
+
     async function runAnalysis() {
       const text = lyricsInput.value;
-      if (!text) return;
+      if (!text) {
+        currentTokens = [];
+        renderInlineEditor();
+        sunoOutput.value = '';
+        if (tokenCountBadge) tokenCountBadge.textContent = '入力待ち';
+        return;
+      }
+
+      if (tokenCountBadge) tokenCountBadge.textContent = '⚡ 解析中...';
 
       try {
         const res = await fetch('/api/analyze', {
@@ -657,11 +667,19 @@
         const data = await res.json();
         currentTokens = data.tokens || [];
         analysisRetryCount = 0;
+
+        if (tokenCountBadge) {
+          tokenCountBadge.textContent = `トークン: ${currentTokens.length}件`;
+        }
+
         renderInlineEditor();
         updateGeneratedText();
       } catch (err) {
-        console.warn('Analysis fetch failed, retrying...', err);
-        // サーバーが立ち上がるまでの自動リトライ（最大 10 回）
+        console.warn('Analysis fetch failed:', err);
+        if (tokenCountBadge) tokenCountBadge.textContent = '⚠️ 通信エラー (再試行中)';
+        if (inlineEditor && currentTokens.length === 0) {
+          inlineEditor.innerHTML = `<div style="color: #ef4444; text-align: center; margin-top: 2rem;">⚠️ サーバー通信エラー: ${err.message}<br><small style="color: #94a3b8;">python3 web_server.py が起動しているか確認してください</small></div>`;
+        }
         if (analysisRetryCount < 10) {
           analysisRetryCount++;
           setTimeout(runAnalysis, 500);

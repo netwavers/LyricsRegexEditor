@@ -26,8 +26,11 @@ class LyricsRegexEditorHandler(http.server.SimpleHTTPRequestHandler):
         
         try:
             req_data = json.loads(body)
-        except Exception:
+        except Exception as e:
+            print(f"❌ JSON parse error: {e}")
             req_data = {}
+
+        print(f"📥 POST {self.path} (Body length: {len(body)})")
 
         # 常に最新モジュールからフレッシュインスタンスを作成
         analyzer = LyricsAnalyzer()
@@ -38,6 +41,7 @@ class LyricsRegexEditorHandler(http.server.SimpleHTTPRequestHandler):
             text = req_data.get('text', '')
             nodes = analyzer.analyze(text)
             tokens = tokenizer.tokenize_nodes(nodes)
+            print(f"  └> Analyzed: {len(nodes)} nodes, {len(tokens)} tokens")
 
             self.send_response(200)
             self.send_header('Content-Type', 'application/json; charset=utf-8')
@@ -51,6 +55,7 @@ class LyricsRegexEditorHandler(http.server.SimpleHTTPRequestHandler):
             vowel_opt = req_data.get('vowel_opt', False)
 
             generated_text = generator.generate(tokens, auto_spacing=auto_spacing, vowel_opt=vowel_opt)
+            print(f"  └> Generated text length: {len(generated_text)}")
 
             self.send_response(200)
             self.send_header('Content-Type', 'application/json; charset=utf-8')
