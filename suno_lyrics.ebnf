@@ -1,0 +1,17 @@
+@namespace "LyricsParser"
+@class "SunoLyricsParser"
+
+Lyrics        = { Element } ;
+Element       = MetaTag | Line | Newline ;
+
+MetaTag       = "[" , TagContent , "]" @{ self.on_meta_tag() @} ;
+TagContent    = Identifier , [ ":" , Identifier ] ;
+
+Line          = TextElement , { TextElement } , Newline ;
+TextElement   = Text | Parenthesized ;
+
+Parenthesized = "(" , { TextElement } , ")" @{ self.on_parenthesized() @} ;
+
+@token Identifier = ? [A-Za-z0-9\s]+ ? ;
+@token Text       = ? [^\[\]\(\)\r\n]+ ? ;
+@token Newline    = "\n" | "\r\n" ;

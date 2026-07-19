@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=🐾 歌詞正規化エディタ
+Comment=Suno/Udio向け歌詞正規化＆プロンプト最適化エディタ
+Exec=/home/tanuki/PyProjects/LyricsRegexEditor/launch_desktop.sh
+Icon=utilities-terminal
+Terminal=false
+Categories=AudioVideo;Audio;Development;

@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🐾 歌詞正規化エディタ (Lyrics Regex Editor)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #0b0f19;
+      --card-bg: rgba(23, 32, 51, 0.85);
+      --card-border: rgba(51, 65, 85, 0.6);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-blue: #38bdf8;
+      --accent-purple: #c084fc;
+      --accent-green: #34d399;
+      --accent-pink: #f472b6;
+      --badge-meta: #334155;
+      --badge-kanji: #0284c7;
+      --badge-num: #d97706;
+      --badge-eng: #7c3aed;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 1.25rem 2rem;
+      background: rgba(15, 23, 42, 0.85);
+      border-bottom: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+    }
+
+    .title-group {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 0.25rem;
+    }
+
+    main {
+      flex: 1;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 1.25rem 2rem;
+      display: grid;
+      grid-template-columns: 1fr 1.25fr 1fr;
+      gap: 1.25rem;
+    }
+
+    .col-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+
+    .col-header {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 0.8rem;
+      color: var(--accent-blue);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    textarea {
+      width: 100%;
+      height: 420px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 1rem;
+      color: var(--text-main);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    textarea:focus {
+      border-color: var(--accent-blue);
+    }
+
+    textarea[disabled] {
+      background: rgba(10, 15, 29, 0.9);
+      color: #38bdf8;
+    }
+
+    .btn-primary {
+      margin-top: 0.8rem;
+      padding: 0.8rem 1.2rem;
+      background: linear-gradient(135deg, #0284c7, #6366f1);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.95;
+    }
+
+    /* インライン文章エディタスタイル */
+    .inline-editor-paper {
+      flex: 1;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 1.2rem;
+      overflow-y: auto;
+      max-height: 440px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      line-height: 1.8;
+      color: #e2e8f0;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .inline-editor-paper::-webkit-scrollbar {
+      width: 6px;
+    }
+    .inline-editor-paper::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.2);
+      border-radius: 3px;
+    }
+
+    /* メタタグ保護スタイリング */
+    .inline-meta-tag {
+      background: rgba(51, 65, 85, 0.5);
+      color: #94a3b8;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      border: 1px dashed #475569;
+      margin: 0 2px;
+      user-select: none;
+    }
+
+    /* インラインハイライト単語 (文字高を平文に揃えたスマート下線ハイライト) */
+    .inline-token-highlight {
+      display: inline;
+      padding: 1px 4px;
+      margin: 0 1px;
+      border-radius: 3px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      line-height: inherit;
+    }
+
+    .inline-token-highlight:hover {
+      filter: brightness(1.2);
+      text-decoration: underline;
+    }
+
+    .token-kanji {
+      background: rgba(2, 132, 199, 0.2);
+      border-bottom: 2px solid var(--accent-blue);
+      color: #7dd3fc;
+    }
+
+    .token-number {
+      background: rgba(217, 119, 6, 0.2);
+      border-bottom: 2px solid #f59e0b;
+      color: #fde047;
+    }
+
+    .token-english {
+      background: rgba(124, 58, 237, 0.2);
+      border-bottom: 2px solid var(--accent-purple);
+      color: #e9d5ff;
+    }
+
+    /* ポップオーバーメニュー */
+    .popover-menu {
+      position: absolute;
+      z-index: 1000;
+      background: #0f172a;
+      border: 1px solid var(--accent-blue);
+      border-radius: 8px;
+      padding: 0.6rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      min-width: 160px;
+      animation: popoverFade 0.15s ease-out;
+    }
+
+    @keyframes popoverFade {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .popover-title {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 0.3rem;
+      margin-bottom: 0.2rem;
+      font-weight: bold;
+    }
+
+    .popover-item {
+      padding: 0.4rem 0.8rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      color: #f8fafc;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.15s;
+    }
+
+    .popover-item:hover {
+      background: #1e293b;
+      color: var(--accent-blue);
+    }
+
+    .popover-item.active {
+      background: #0284c7;
+      color: #ffffff;
+      font-weight: bold;
+    }
+
+    .popover-item-custom {
+      color: var(--accent-green);
+      font-weight: bold;
+      border-top: 1px dashed #334155;
+      margin-top: 0.2rem;
+      padding-top: 0.5rem;
+    }
+
+    /* AI装飾トグルスイッチ */
+    .toggle-group {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 0.8rem;
+      margin-bottom: 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .toggle-label {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: #cbd5e1;
+      font-weight: 600;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 38px;
+      height: 20px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #334155;
+      transition: .2s;
+      border-radius: 20px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .2s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--accent-blue);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(18px);
+    }
+
+    .copy-toast {
+      display: none;
+      background: var(--accent-green);
+      color: #0f172a;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-top: 0.5rem;
+      text-align: center;
+    }
+
+    footer {
+      padding: 1rem;
+      text-align: center;
+      font-size: 0.8rem;
+      color: #64748b;
+      border-top: 1px solid rgba(51, 65, 85, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="title-group">
+      <h1>🐾 歌詞正規化エディタ (Lyrics Regex Editor)</h1>
+      <div class="subtitle">フェーズ2・インライン文章UI ＆ my_dict.json 学習 ＆ 歌唱AI自動装飾</div>
+    </div>
+  </header>
+
+  <main>
+    <!-- 左カラム -->
+    <div class="col-card">
+      <div class="col-header">1. 原文歌詞の入力</div>
+      <textarea id="lyricsInput" placeholder="歌詞テキストを入力...">[Intro]
+(幻想的なハープの調べから、急加速する16ビートのシティポップ・サウンドへ)
+
+[Verse 1]
+自動化の波に　身を任せて
+完璧なメイドを　演じ切りますわ
+効率を忘れた　愛の一次対応
+あぁ、なんて贅沢な時間かしら！
+
+[Verse 2]
+「一次が長すぎる！」なんて　お怒りですが
+そう思うてー</textarea>
+      <button class="btn-primary" id="analyzeBtn">⚡ 構文解析・インライン構成</button>
+    </div>
+
+    <!-- 中央カラム (インライン文章UI) -->
+    <div class="col-card">
+      <div class="col-header" style="justify-content: space-between;">
+        <span>2. インライン読み確認・調整</span>
+        <span id="tokenCountBadge" style="font-size: 0.8rem; background: #334155; padding: 2px 8px; border-radius: 12px; color: #94a3b8;">インライン表示中</span>
+      </div>
+
+      <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.6rem;">
+        💡 ハイライト単語（<span style="color: #7dd3fc;">漢字</span>, <span style="color: #fde047;">数字</span>, <span style="color: #e9d5ff;">英語</span>）をクリックすると、その場で読みを選択・カスタム登録できますわ。
+      </div>
+
+      <div class="inline-editor-paper" id="inlineEditor">
+        <div style="color: #64748b; text-align: center; margin-top: 3rem;">
+          👈 左側で歌詞を入力すると、ここにインラインレイアウトが生成されます。
+        </div>
+      </div>
+    </div>
+
+    <!-- 右カラム -->
+    <div class="col-card">
+      <div class="col-header">3. Suno/Udio用 歌唱テキスト出力</div>
+
+      <!-- AI向け自動装飾トグルスイッチ -->
+      <div class="toggle-group">
+        <div class="toggle-row">
+          <span class="toggle-label">✂️ 言葉の切れ目自動調整 (スペース挿入)</span>
+          <label class="switch">
+            <input type="checkbox" id="toggleAutoSpacing">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">🎵 長音母音最適化 (てー➔てえ, そう➔そお)</span>
+          <label class="switch">
+            <input type="checkbox" id="toggleVowelOpt">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <textarea id="sunoOutput" readonly placeholder="生成された歌唱テキストがリアルタイム同期表示されます..."></textarea>
+      
+      <div style="display: flex; gap: 0.5rem; margin-top: 0.8rem;">
+        <button class="btn-primary" id="speakBtn" style="flex: 1; background: linear-gradient(135deg, #818cf8, #c084fc);">🔊 音声で試聴（TTS）</button>
+        <button class="btn-primary" id="stopBtn" style="background: #475569; padding: 0.8rem;">⏹️</button>
+      </div>
+      <button class="btn-primary" id="copyBtn" style="background: linear-gradient(135deg, #10b981, #059669); margin-top: 0.4rem;">📋 クリップボードにコピー</button>
+      <div class="copy-toast" id="copyToast">✅ クリップボードにコピーしました！</div>
+    </div>
+  </main>
+
+  <footer>
+    TanukiParser Engine &bull; Lyrics Regex Editor Phase 2 Architecture
+  </footer>
+
+  <script>
+    let currentTokens = [];
+    let activePopover = null;
+    let synth = window.speechSynthesis;
+
+    const lyricsInput = document.getElementById('lyricsInput');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const inlineEditor = document.getElementById('inlineEditor');
+    const sunoOutput = document.getElementById('sunoOutput');
+    const copyBtn = document.getElementById('copyBtn');
+    const copyToast = document.getElementById('copyToast');
+    const speakBtn = document.getElementById('speakBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const toggleAutoSpacing = document.getElementById('toggleAutoSpacing');
+    const toggleVowelOpt = document.getElementById('toggleVowelOpt');
+
+    // トグル変化時にリアルタイム更新
+    toggleAutoSpacing.addEventListener('change', updateGeneratedText);
+    toggleVowelOpt.addEventListener('change', updateGeneratedText);
+
+    // インライン文章UI描画
+    function renderInlineEditor() {
+      closePopover();
+      inlineEditor.innerHTML = '';
+
+      if (currentTokens.length === 0) {
+        inlineEditor.innerHTML = '<div style="color: #64748b; text-align: center; margin-top: 3rem;">トークンがありません</div>';
+        return;
+      }
+
+      currentTokens.forEach(token => {
+        const t_type = token.type || 'plain';
+        const t_text = token.text || '';
+
+        // 改行処理
+        if (t_type === 'newline') {
+          inlineEditor.appendChild(document.createElement('br'));
+          return;
+        }
+
+        // メタタグおよびカッコ内プロンプト（演奏指示・コード）処理
+        if (t_type === 'meta_tag' || t_type === 'parenthesized') {
+          const span = document.createElement('span');
+          span.className = 'inline-meta-tag';
+          span.textContent = t_text;
+          inlineEditor.appendChild(span);
+          return;
+        }
+
+        // ハイライト対象トークン (選択肢あり、または一般漢字)
+        if (token.has_choices || t_type === 'kanji') {
+          const span = document.createElement('span');
+          let typeClass = 'token-kanji';
+          if (t_type === 'number') typeClass = 'token-number';
+          if (t_type === 'english') typeClass = 'token-english';
+
+          span.className = `inline-token-highlight ${typeClass}`;
+          span.textContent = token.selected || t_text;
+
+          // ポップオーバー表示イベント
+          span.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showPopover(e.currentTarget, token);
+          });
+
+          inlineEditor.appendChild(span);
+        } else {
+          // 通常の平文
+          const span = document.createElement('span');
+          span.textContent = token.selected || t_text;
+          inlineEditor.appendChild(span);
+        }
+      });
+    }
+
+    // ポップオーバーメニューの表示
+    function showPopover(element, token) {
+      closePopover();
+
+      const rect = element.getBoundingClientRect();
+      const popover = document.createElement('div');
+      popover.className = 'popover-menu';
+      popover.style.top = `${rect.bottom + window.scrollY + 4}px`;
+      popover.style.left = `${rect.left + window.scrollX}px`;
+
+      const title = document.createElement('div');
+      title.className = 'popover-title';
+      title.textContent = `『${token.text}』の読み選択:`;
+      popover.appendChild(title);
+
+      const choices = token.choices || [token.text];
+      choices.forEach(choice => {
+        if (choice === '(カスタム入力)') return;
+
+        const item = document.createElement('div');
+        item.className = `popover-item ${choice === token.selected ? 'active' : ''}`;
+        item.textContent = choice;
+
+        item.addEventListener('click', () => {
+          token.selected = choice;
+          renderInlineEditor();
+          updateGeneratedText();
+          closePopover();
+        });
+
+        popover.appendChild(item);
+      });
+
+      // カスタム読み追加ボタン
+      const customItem = document.createElement('div');
+      customItem.className = 'popover-item popover-item-custom';
+      customItem.textContent = '+ カスタム読みを追加...';
+      customItem.addEventListener('click', async () => {
+        closePopover();
+        const customVal = prompt(`『${token.text}』の新しい読み（ひらがな等）を入力してください:`, token.selected || token.text);
+        if (customVal && customVal.trim() !== '') {
+          const val = customVal.trim();
+          token.selected = val;
+          token.has_choices = true;
+          if (!token.choices) token.choices = [];
+          if (!token.choices.includes(val)) token.choices.unshift(val);
+
+          // my_dict.json に自動保存
+          await saveCustomReading(token.text, val);
+
+          renderInlineEditor();
+          updateGeneratedText();
+        }
+      });
+
+      popover.appendChild(customItem);
+      document.body.appendChild(popover);
+      activePopover = popover;
+    }
+
+    function closePopover() {
+      if (activePopover) {
+        activePopover.remove();
+        activePopover = null;
+      }
+    }
+
+    document.addEventListener('click', closePopover);
+
+    // カスタム読みを my_dict.json に自動保存する API
+    async function saveCustomReading(word, reading) {
+      try {
+        await fetch('/api/save_custom', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ word, reading })
+        });
+      } catch (err) {
+        console.error('Failed to save custom reading:', err);
+      }
+    }
+
+    // TTS読み上げ機能（メタタグ [...] および 演奏指示 (...) （...） を除外して純歌唱歌詞のみ読み上げ）
+    function speakText() {
+      if (!synth) {
+        alert('お使いのブラウザは音声合成（TTS）に対応していません。');
+        return;
+      }
+      synth.cancel();
+
+      const text = sunoOutput.value.trim();
+      if (!text) return;
+
+      // 角カッコ [...] と 丸カッコ (...) （...） のプロンプト指示をすべてスキップ
+      const cleanText = text.replace(/\[[^\]]+\]|［[^］]+］|\([^\)]+\)|（[^）]+）/g, '').replace(/\s+/g, ' ').trim();
+
+      if (!cleanText) return;
+
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.lang = 'ja-JP';
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+
+      synth.speak(utterance);
+    }
+
+    function stopText() {
+      if (synth) synth.cancel();
+    }
+
+    speakBtn.addEventListener('click', speakText);
+    stopBtn.addEventListener('click', stopText);
+
+    // 解析APIの実行
+    async function runAnalysis() {
+      const text = lyricsInput.value;
+      try {
+        const res = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
+        });
+        const data = await res.json();
+        currentTokens = data.tokens || [];
+        renderInlineEditor();
+        updateGeneratedText();
+      } catch (err) {
+        console.error('Analysis failed:', err);
+      }
+    }
+
+    // リアルタイム歌唱プロンプトの更新 (装飾フラグ連動)
+    async function updateGeneratedText() {
+      try {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tokens: currentTokens,
+            auto_spacing: toggleAutoSpacing.checked,
+            vowel_opt: toggleVowelOpt.checked
+          })
+        });
+        const data = await res.json();
+        sunoOutput.value = data.text || '';
+      } catch (err) {
+        console.error('Generate failed:', err);
+      }
+    }
+
+    // トグル変化時にリアルタイム更新 ＆ localStorage 保存
+    toggleAutoSpacing.addEventListener('change', () => {
+      localStorage.setItem('lyrics_editor_auto_spacing', toggleAutoSpacing.checked);
+      updateGeneratedText();
+    });
+    toggleVowelOpt.addEventListener('change', () => {
+      localStorage.setItem('lyrics_editor_vowel_opt', toggleVowelOpt.checked);
+      updateGeneratedText();
+    });
+
+    let debounceTimer = null;
+    lyricsInput.addEventListener('input', () => {
+      localStorage.setItem('lyrics_editor_input', lyricsInput.value);
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        runAnalysis();
+      }, 300);
+    });
+
+    analyzeBtn.addEventListener('click', () => {
+      localStorage.setItem('lyrics_editor_input', lyricsInput.value);
+      runAnalysis();
+    });
+
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(sunoOutput.value);
+      copyToast.style.display = 'block';
+      setTimeout(() => { copyToast.style.display = 'none'; }, 2000);
+    });
+
+    // ページロード時の状態自動復元
+    function restoreSavedState() {
+      const savedInput = localStorage.getItem('lyrics_editor_input');
+      if (savedInput !== null) {
+        lyricsInput.value = savedInput;
+      }
+      const savedSpacing = localStorage.getItem('lyrics_editor_auto_spacing');
+      if (savedSpacing !== null) {
+        toggleAutoSpacing.checked = (savedSpacing === 'true');
+      }
+      const savedVowel = localStorage.getItem('lyrics_editor_vowel_opt');
+      if (savedVowel !== null) {
+        toggleVowelOpt.checked = (savedVowel === 'true');
+      }
+    }
+
+    // 初期起動時復元 ＆ 解析
+    restoreSavedState();
+    runAnalysis();
+  </script>
+</body>
+</html>
