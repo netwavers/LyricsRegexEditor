@@ -382,7 +382,10 @@
   <main>
     <!-- 左カラム -->
     <div class="col-card">
-      <div class="col-header">1. 原文歌詞の入力</div>
+      <div class="col-header" style="justify-content: space-between;">
+        <span>1. 原文歌詞の入力</span>
+        <button id="resetInputBtn" style="background: transparent; border: 1px solid #475569; color: #94a3b8; font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; cursor: pointer;" title="保存データを消去して初期サンプル歌詞に戻します">🧹 リセット</button>
+      </div>
       <textarea id="lyricsInput" placeholder="歌詞テキストを入力...">[Intro]
 (幻想的なハープの調べから、急加速する16ビートのシティポップ・サウンドへ)
 
@@ -824,6 +827,18 @@
     lyricsInput.addEventListener('change', triggerAnalysisWithReset);
 
     analyzeBtn.addEventListener('click', triggerAnalysisWithReset);
+
+    const resetInputBtn = document.getElementById('resetInputBtn');
+    const DEFAULT_SAMPLE_LYRICS = `[Intro]\n(幻想的なハープの調べから、急加速する16ビートのシティポップ・サウンドへ)\n\n[Verse 1]\n自動化の波に　身を任せて\n完璧なメイドを　演じ切りますわ\n効率を忘れた　愛の一次対応\nあぁ、なんて贅沢な時間かしら！\n\n[Verse 2]\n「一次が長すぎる！」なんて　お怒りですが\nそう思うてー`;
+
+    if (resetInputBtn) {
+      resetInputBtn.addEventListener('click', () => {
+        localStorage.removeItem('lyrics_editor_input');
+        lyricsInput.value = DEFAULT_SAMPLE_LYRICS;
+        triggerAnalysisWithReset();
+        debugLog('🧹 入力データを初期サンプル歌詞にリセットしました。');
+      });
+    }
 
     copyBtn.addEventListener('click', () => {
       navigator.clipboard.writeText(sunoOutput.value);
