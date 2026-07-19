@@ -97,15 +97,19 @@ class LyricsRegexEditorHandler(http.server.SimpleHTTPRequestHandler):
             self.send_error(404, "Not Found")
 
 
+ACTIVE_PORT = None
+
 def run_server(port: int = PORT):
+    global ACTIVE_PORT
     socketserver.TCPServer.allow_reuse_address = True
-    for p in range(port, port + 10):
+    for p in range(port, port + 20):
         try:
-            with socketserver.TCPServer(("", p), LyricsRegexEditorHandler) as httpd:
-                print(f"🐾 歌詞正規化エディタ Webサーバー起動成功: http://localhost:{p}")
-                httpd.serve_forever()
-                break
-        except OSError:
+            httpd = socketserver.TCPServer(("127.0.0.1", p), LyricsRegexEditorHandler)
+            ACTIVE_PORT = p
+            print(f"🐾 歌詞正規化エディタ Webサーバー起動成功: http://127.0.0.1:{p}")
+            httpd.serve_forever()
+            break
+        except Exception as e:
             continue
 
 if __name__ == "__main__":

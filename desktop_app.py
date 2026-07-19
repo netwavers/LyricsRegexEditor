@@ -6,35 +6,21 @@ import urllib.request
 from web_server import run_server
 
 DEFAULT_PORT = 8088
-actual_bound_port = None
 
 def start_server_and_wait():
-    """Web サーバーを自前で自動起動し、接続確認が取れるまで待機"""
-    global actual_bound_port
+    """Web サーバーを自動起動し、接続確認が取れるまで待機"""
+    import web_server
 
-    def server_runner():
-        global actual_bound_port
-        import socketserver
-        socketserver.TCPServer.allow_reuse_address = True
-        from web_server import LyricsRegexEditorHandler
-        for p in range(DEFAULT_PORT, DEFAULT_PORT + 20):
-            try:
-                httpd = socketserver.TCPServer(("127.0.0.1", p), LyricsRegexEditorHandler)
-                actual_bound_port = p
-                print(f"🐾 歌詞正規化エディタ Webサーバー起動成功: http://127.0.0.1:{p}")
-                httpd.serve_forever()
-                break
-            except OSError:
-                continue
-
-    server_thread = threading.Thread(target=server_runner, daemon=True)
+    # サーバーをバックグラウンドスレッドで自動起動
+    server_thread = threading.Thread(target=web_server.run_server, kwargs={"port": DEFAULT_PORT}, daemon=True)
     server_thread.start()
 
-    # スレッドがポートにバインドし、HTTP 200 を返すまで待機
+    # スレッドがポートにバインドし、HTTP 200 を返すまで待機（最大 5 秒）
     for _ in range(50):
         time.sleep(0.1)
-        if actual_bound_port is not None:
-            url = f"http://127.0.0.1:{actual_bound_port}"
+        port = web_server.ACTIVE_PORT
+        if port is not None:
+            url = f"http://127.0.0.1:{port}"
             try:
                 with urllib.request.urlopen(url, timeout=0.5) as resp:
                     if resp.status == 200:
@@ -42,7 +28,8 @@ def start_server_and_wait():
             except Exception:
                 pass
 
-    return f"http://127.0.0.1:{DEFAULT_PORT}"
+    active_port = web_server.ACTIVE_PORT or DEFAULT_PORT
+    return f"http://127.0.0.1:{active_port}"
 
 def launch_desktop_app():
     """PyWebView または Chrome/Chromium アプリモードで独立ウィンドウを立ち上げる"""
