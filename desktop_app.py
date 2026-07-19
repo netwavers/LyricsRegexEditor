@@ -46,7 +46,9 @@ def start_server_and_wait():
 
 def launch_desktop_app():
     """PyWebView または Chrome/Chromium アプリモードで独立ウィンドウを立ち上げる"""
-    app_url = start_server_and_wait()
+    base_url = start_server_and_wait()
+    # キャッシュを回避するためにタイムスタンプクエリパラメータを付与
+    app_url = f"{base_url}/?_t={int(time.time())}"
     print(f"🐾 歌詞正規化エディタ デスクトップアプリを起動中... ({app_url})")
 
     # 1. PyWebView が利用可能な場合
@@ -60,7 +62,7 @@ def launch_desktop_app():
             resizable=True,
             min_size=(900, 600)
         )
-        webview.start()
+        webview.start(private_mode=True)
         return
     except Exception as e:
         print(f"PyWebView 起動不可 (Chrome アプリモードに切り替えます): {e}")
@@ -68,9 +70,9 @@ def launch_desktop_app():
     # 2. Chrome / Chromium の --app モード（ブラウザ枠のない完全アプリ表示）
     import subprocess
     chrome_cmds = [
-        ["google-chrome", f"--app={app_url}", "--window-size=1320,860"],
-        ["chromium-browser", f"--app={app_url}", "--window-size=1320,860"],
-        ["chromium", f"--app={app_url}", "--window-size=1320,860"],
+        ["google-chrome", f"--app={app_url}", "--window-size=1320,860", "--disk-cache-dir=/dev/null"],
+        ["chromium-browser", f"--app={app_url}", "--window-size=1320,860", "--disk-cache-dir=/dev/null"],
+        ["chromium", f"--app={app_url}", "--window-size=1320,860", "--disk-cache-dir=/dev/null"],
         ["microsoft-edge", f"--app={app_url}", "--window-size=1320,860"],
     ]
 
