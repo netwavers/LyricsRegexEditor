@@ -641,21 +641,31 @@
     speakBtn.addEventListener('click', speakText);
     stopBtn.addEventListener('click', stopText);
 
-    // 解析APIの実行
+    // 解析APIの実行（接続エラー時の自動リトライ機能付き）
+    let analysisRetryCount = 0;
     async function runAnalysis() {
       const text = lyricsInput.value;
+      if (!text) return;
+
       try {
         const res = await fetch('/api/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text })
         });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         currentTokens = data.tokens || [];
+        analysisRetryCount = 0;
         renderInlineEditor();
         updateGeneratedText();
       } catch (err) {
-        console.error('Analysis failed:', err);
+        console.warn('Analysis fetch failed, retrying...', err);
+        // サーバーが立ち上がるまでの自動リトライ（最大 10 回）
+        if (analysisRetryCount < 10) {
+          analysisRetryCount++;
+          setTimeout(runAnalysis, 500);
+        }
       }
     }
 
@@ -671,10 +681,11 @@
             vowel_opt: toggleVowelOpt.checked
           })
         });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         sunoOutput.value = data.text || '';
       } catch (err) {
-        console.error('Generate failed:', err);
+        console.warn('Generate fetch failed:', err);
       }
     }
 
@@ -724,7 +735,7 @@
       }
     }
 
-    // 初期起動時復元 ＆ 解析
+    // 初期起動時復元 ＆ 解析実行
     restoreSavedState();
     runAnalysis();
   </script>

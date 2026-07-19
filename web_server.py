@@ -11,13 +11,14 @@ PORT = 8088
 class LyricsRegexEditorHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path == '/' or self.path == '/index.html':
-            self.send_response(200)
-            self.send_header('Content-Type', 'text/html; charset=utf-8')
-            self.end_headers()
-            with open(os.path.join(os.path.dirname(__file__), 'index.html'), 'rb') as f:
-                self.wfile.write(f.read())
+          self.send_response(200)
+          self.send_header('Content-Type', 'text/html; charset=utf-8')
+          self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+          self.end_headers()
+          with open(os.path.join(os.path.dirname(__file__), 'index.html'), 'rb') as f:
+            self.wfile.write(f.read())
         else:
-            super().do_GET()
+          super().do_GET()
 
     def do_POST(self):
         content_length = int(self.headers.get('Content-Length', 0))
