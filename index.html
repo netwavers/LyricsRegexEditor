@@ -563,6 +563,13 @@
             <span class="slider"></span>
           </label>
         </div>
+        <div class="toggle-row">
+          <span class="toggle-label">🗣 助詞発音補正 (助詞「は」➔「わ」)</span>
+          <label class="switch">
+            <input type="checkbox" id="toggleFixParticleHa">
+            <span class="slider"></span>
+          </label>
+        </div>
       </div>
 
       <textarea id="sunoOutput" readonly placeholder="生成された歌唱テキストがリアルタイム同期表示されます..."></textarea>
@@ -599,10 +606,12 @@
     const stopBtn = document.getElementById('stopBtn');
     const toggleAutoSpacing = document.getElementById('toggleAutoSpacing');
     const toggleVowelOpt = document.getElementById('toggleVowelOpt');
+    const toggleFixParticleHa = document.getElementById('toggleFixParticleHa');
 
     // トグル変化時にリアルタイム更新
     toggleAutoSpacing.addEventListener('change', () => updateGeneratedText());
     toggleVowelOpt.addEventListener('change', () => updateGeneratedText());
+    if (toggleFixParticleHa) toggleFixParticleHa.addEventListener('change', () => updateGeneratedText());
 
     // インライン文章UI描画
     function renderInlineEditor() {
@@ -900,7 +909,8 @@
           body: JSON.stringify({
             tokens: currentTokens,
             auto_spacing: toggleAutoSpacing.checked,
-            vowel_opt: toggleVowelOpt.checked
+            vowel_opt: toggleVowelOpt.checked,
+            fix_particle_ha: toggleFixParticleHa ? toggleFixParticleHa.checked : false
           })
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -912,6 +922,9 @@
         currentTokens.forEach(t => {
           out += t.selected || t.text || '';
         });
+        if (toggleFixParticleHa && toggleFixParticleHa.checked) {
+          out = out.replace(/(?<=[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFFa-zA-Z0-9])は(?=[\s\n、。!！?？〜ー,.]|$|［|\[|\(|（)/g, 'わ');
+        }
         sunoOutput.value = out;
       }
     }
@@ -924,6 +937,12 @@
       localStorage.setItem('lyrics_editor_vowel_opt', toggleVowelOpt.checked);
       updateGeneratedText();
     });
+    if (toggleFixParticleHa) {
+      toggleFixParticleHa.addEventListener('change', () => {
+        localStorage.setItem('lyrics_editor_fix_particle_ha', toggleFixParticleHa.checked);
+        updateGeneratedText();
+      });
+    }
 
     let debounceTimer = null;
     function triggerAnalysisWithReset() {
@@ -988,6 +1007,10 @@
       const savedVowel = localStorage.getItem('lyrics_editor_vowel_opt');
       if (savedVowel !== null) {
         toggleVowelOpt.checked = (savedVowel === 'true');
+      }
+      const savedParticleHa = localStorage.getItem('lyrics_editor_fix_particle_ha');
+      if (savedParticleHa !== null && toggleFixParticleHa) {
+        toggleFixParticleHa.checked = (savedParticleHa === 'true');
       }
     }
 

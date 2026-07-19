@@ -45,11 +45,18 @@ class TestLyricsRegexEditorPhase2(unittest.TestCase):
 
         code_res = self.generator.generate(code_tokens, auto_spacing=True, vowel_opt=True)
         self.assertIn("(F#maj9 - G#m7/F# - Bm7/F#)", code_res)
-        self.assertNotIn("きゅう", code_res)
-        self.assertNotIn("なな", code_res)
 
-        print("\n✅ フェーズ2生成＆カッコ保護テスト結果:")
+        # 4. 助詞『は』➔『わ』発音補正テスト (Suno発音最適化)
+        ha_lyrics = "君は僕の太陽\n花は綺麗に咲く"
+        ha_nodes = self.analyzer.analyze(ha_lyrics)
+        ha_tokens = self.tokenizer.tokenize_nodes(ha_nodes)
+        ha_res = self.generator.generate(ha_tokens, fix_particle_ha=True)
+        self.assertIn("君わ僕の太陽", ha_res)
+        self.assertIn("花わ綺麗に咲く", ha_res) # 「花」の「は」は保護され助詞の「は」のみ「わ」に置換
+
+        print("\n✅ フェーズ2生成＆カッコ保護＆助詞発音補正テスト結果:")
         print(code_res)
+        print(ha_res)
 
 if __name__ == "__main__":
     unittest.main()

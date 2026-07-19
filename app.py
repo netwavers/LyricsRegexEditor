@@ -112,11 +112,13 @@ with col3:
 
     auto_spacing = st.toggle("✂️ 言葉の切れ目自動調整 (スペース挿入)", value=False)
     vowel_opt = st.toggle("🎵 長音母音最適化 (てー➔てえ, そう➔そお)", value=False)
+    fix_particle_ha = st.toggle("🗣 助詞発音補正 (助詞「は」➔「わ」)", value=False)
 
     generated_output = generator.generate(
         st.session_state.tokens,
         auto_spacing=auto_spacing,
-        vowel_opt=vowel_opt
+        vowel_opt=vowel_opt,
+        fix_particle_ha=fix_particle_ha
     )
 
     st.text_area(

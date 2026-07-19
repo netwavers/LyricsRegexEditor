@@ -68,8 +68,14 @@ class LyricsRegexEditorHandler(http.server.SimpleHTTPRequestHandler):
             tokens = req_data.get('tokens', [])
             auto_spacing = req_data.get('auto_spacing', False)
             vowel_opt = req_data.get('vowel_opt', False)
+            fix_particle_ha = req_data.get('fix_particle_ha', False)
 
-            generated_text = generator.generate(tokens, auto_spacing=auto_spacing, vowel_opt=vowel_opt)
+            generated_text = generator.generate(
+                tokens,
+                auto_spacing=auto_spacing,
+                vowel_opt=vowel_opt,
+                fix_particle_ha=fix_particle_ha
+            )
             print(f"  └> Generated text length: {len(generated_text)}")
 
             self.send_response(200)
