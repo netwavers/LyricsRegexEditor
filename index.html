@@ -115,6 +115,10 @@
       resize: vertical;
       outline: none;
       transition: border-color 0.2s;
+      position: relative;
+      z-index: 10;
+      pointer-events: auto !important;
+      user-select: text !important;
     }
 
     textarea:focus {
@@ -816,6 +820,15 @@
     }
 
     lyricsInput.addEventListener('input', () => {
+      localStorage.setItem('lyrics_editor_input', lyricsInput.value);
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        analysisRetryCount = 0;
+        runAnalysis();
+      }, 100);
+    });
+
+    lyricsInput.addEventListener('keyup', () => {
       localStorage.setItem('lyrics_editor_input', lyricsInput.value);
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
