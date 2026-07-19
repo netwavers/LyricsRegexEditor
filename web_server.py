@@ -9,6 +9,16 @@ from generator import LyricsGenerator
 PORT = 8088
 
 class LyricsRegexEditorHandler(http.server.SimpleHTTPRequestHandler):
+    def _send_cors_headers(self):
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+
+    def do_OPTIONS(self):
+        self.send_response(200, "ok")
+        self._send_cors_headers()
+        self.end_headers()
+
     def do_GET(self):
         clean_path = self.path.split('?')[0]
         if clean_path in ('/', '/index.html'):
@@ -17,6 +27,7 @@ class LyricsRegexEditorHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
             self.send_header('Pragma', 'no-cache')
             self.send_header('Expires', '0')
+            self._send_cors_headers()
             self.end_headers()
             with open(os.path.join(os.path.dirname(__file__), 'index.html'), 'rb') as f:
                 self.wfile.write(f.read())
@@ -48,6 +59,7 @@ class LyricsRegexEditorHandler(http.server.SimpleHTTPRequestHandler):
 
             self.send_response(200)
             self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self._send_cors_headers()
             self.end_headers()
             res = json.dumps({"tokens": tokens}, ensure_ascii=False)
             self.wfile.write(res.encode('utf-8'))
@@ -62,6 +74,7 @@ class LyricsRegexEditorHandler(http.server.SimpleHTTPRequestHandler):
 
             self.send_response(200)
             self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self._send_cors_headers()
             self.end_headers()
             res = json.dumps({"text": generated_text}, ensure_ascii=False)
             self.wfile.write(res.encode('utf-8'))
@@ -75,6 +88,7 @@ class LyricsRegexEditorHandler(http.server.SimpleHTTPRequestHandler):
 
             self.send_response(200)
             self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self._send_cors_headers()
             self.end_headers()
             res = json.dumps({"status": "ok", "choices": updated_choices}, ensure_ascii=False)
             self.wfile.write(res.encode('utf-8'))
