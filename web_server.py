@@ -74,8 +74,7 @@ class LyricsRegexEditorHandler(http.server.SimpleHTTPRequestHandler):
             self.send_error(404, "Not Found")
 
 
-def run_server():
-    port = PORT
+def run_server(port: int = PORT):
     for p in range(port, port + 10):
         try:
             with socketserver.TCPServer(("", p), LyricsRegexEditorHandler) as httpd:
