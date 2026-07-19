@@ -6,22 +6,53 @@
   <title>🐾 歌詞正規化エディタ (Lyrics Regex Editor)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,400..800;1,400..800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-color: #0b0f19;
-      --card-bg: rgba(23, 32, 51, 0.85);
-      --card-border: rgba(51, 65, 85, 0.6);
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --accent-blue: #38bdf8;
-      --accent-purple: #c084fc;
-      --accent-green: #34d399;
-      --accent-pink: #f472b6;
-      --badge-meta: #334155;
-      --badge-kanji: #0284c7;
-      --badge-num: #d97706;
-      --badge-eng: #7c3aed;
+      /* Azure Drift Color Palette */
+      --surface: #f7faf9;
+      --surface-dim: #d7dbda;
+      --surface-bright: #f7faf9;
+      --surface-container-lowest: #ffffff;
+      --surface-container-low: #f1f4f3;
+      --surface-container: #ebeeed;
+      --surface-container-high: #e6e9e8;
+      --surface-container-highest: #e0e3e2;
+      --on-surface: #181c1c;
+      --on-surface-variant: #3e4850;
+      --outline: #6e7881;
+      --outline-variant: #bec8d2;
+      
+      --primary: #006591;
+      --on-primary: #ffffff;
+      --primary-container: #0ea5e9;
+      --on-primary-container: #003751;
+      
+      --secondary: #006399;
+      --secondary-container: #7bc2ff;
+      --on-secondary-container: #004f7b;
+      
+      --tertiary: #934b19;
+      --tertiary-container: #dd864f;
+      --on-tertiary-container: #572500;
+      
+      --background: #f7faf9;
+      --on-background: #181c1c;
+      
+      --success-mint: #10B981;
+      --accent-red: #EF4444;
+      
+      --token-kanji-bg: rgba(0, 101, 145, 0.08);
+      --token-kanji-border: #006591;
+      --token-kanji-text: #004c6e;
+      
+      --token-num-bg: rgba(147, 75, 25, 0.08);
+      --token-num-border: #934b19;
+      --token-num-text: #753401;
+
+      --token-eng-bg: rgba(14, 165, 233, 0.08);
+      --token-eng-border: #0ea5e9;
+      --token-eng-text: #004f7b;
     }
 
     * {
@@ -32,70 +63,102 @@
 
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-main);
+      background-color: var(--background);
+      color: var(--on-surface);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
     }
 
+    /* Header - Nautical Cafe Aesthetic */
     header {
       padding: 1.25rem 2rem;
-      background: rgba(15, 23, 42, 0.85);
-      border-bottom: 1px solid var(--card-border);
-      backdrop-filter: blur(12px);
+      background: var(--surface-container-lowest);
+      border-bottom: 2px solid var(--surface-container-highest);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
     }
 
     .title-group {
-      max-width: 1400px;
+      max-width: 1440px;
       margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.2rem;
     }
 
     h1 {
-      font-size: 1.75rem;
+      font-family: 'Hanken Grotesk', sans-serif;
+      font-size: 1.85rem;
       font-weight: 800;
-      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.02em;
+      color: var(--primary);
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.6rem;
     }
 
     .subtitle {
-      color: var(--text-muted);
-      font-size: 0.85rem;
+      color: var(--on-surface-variant);
+      font-size: 0.88rem;
       margin-top: 0.25rem;
+      font-weight: 500;
     }
 
     main {
       flex: 1;
-      max-width: 1400px;
+      max-width: 1440px;
       width: 100%;
       margin: 0 auto;
-      padding: 1.25rem 2rem;
+      padding: 1.5rem 2rem;
       display: grid;
       grid-template-columns: 1fr 1.25fr 1fr;
-      gap: 1.25rem;
+      gap: 1.5rem;
     }
 
+    /* Main Column Card System */
     .col-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 14px;
-      padding: 1.25rem;
+      background: var(--surface-container-lowest);
+      border: 1px solid var(--outline-variant);
+      border-radius: 16px;
+      padding: 1.35rem;
       display: flex;
       flex-direction: column;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
       position: relative;
+      transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .col-card:hover {
+      box-shadow: 0 6px 20px rgba(0, 101, 145, 0.06);
+      border-color: #b0c4de;
     }
 
     .col-header {
-      font-size: 1.05rem;
+      font-family: 'Hanken Grotesk', sans-serif;
+      font-size: 1.1rem;
       font-weight: 700;
-      margin-bottom: 0.8rem;
-      color: var(--accent-blue);
+      margin-bottom: 1rem;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid var(--surface-container);
+      padding-bottom: 0.6rem;
+    }
+
+    .col-header-title {
       display: flex;
       align-items: center;
       gap: 0.5rem;
@@ -104,43 +167,44 @@
     textarea {
       width: 100%;
       height: 420px;
-      background: rgba(15, 23, 42, 0.9);
-      border: 1px solid var(--card-border);
+      background: var(--surface-container-low);
+      border: 1px solid var(--outline-variant);
       border-radius: 8px;
       padding: 1rem;
-      color: var(--text-main);
+      color: var(--on-surface);
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.95rem;
+      font-size: 0.92rem;
       line-height: 1.6;
       resize: vertical;
       outline: none;
-      transition: border-color 0.2s;
-      position: relative;
-      z-index: 10;
-      pointer-events: auto !important;
-      user-select: text !important;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03);
     }
 
     textarea:focus {
-      border-color: var(--accent-blue);
+      border-color: var(--primary-container);
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.03);
     }
 
-    textarea[disabled] {
-      background: rgba(10, 15, 29, 0.9);
-      color: #38bdf8;
+    textarea[readonly] {
+      background: var(--surface-container);
+      color: var(--on-surface);
     }
 
+    /* Modern Primary Buttons (Ocean Blue Gradient) */
     .btn-primary {
       margin-top: 0.8rem;
       padding: 0.8rem 1.2rem;
-      background: linear-gradient(135deg, #0284c7, #6366f1);
-      color: #fff;
+      background: linear-gradient(135deg, var(--primary-container), var(--primary));
+      color: var(--on-primary);
       border: none;
       border-radius: 8px;
+      font-family: 'Inter', sans-serif;
       font-weight: 700;
       font-size: 0.9rem;
       cursor: pointer;
-      transition: transform 0.1s, opacity 0.2s;
+      box-shadow: 0 3px 8px rgba(0, 101, 145, 0.25);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -148,53 +212,79 @@
     }
 
     .btn-primary:hover {
-      opacity: 0.95;
+      transform: translateY(-1px);
+      box-shadow: 0 5px 12px rgba(0, 101, 145, 0.35);
+      opacity: 0.98;
     }
 
-    /* インライン文章エディタスタイル */
+    .btn-primary:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 4px rgba(0, 101, 145, 0.2);
+    }
+
+    .btn-secondary {
+      background: var(--surface-container-high);
+      color: var(--on-surface-variant);
+      border: 1px solid var(--outline-variant);
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-secondary:hover {
+      background: var(--surface-container-highest);
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    /* Modern Tactile Inline Paper Editor */
     .inline-editor-paper {
       flex: 1;
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid var(--card-border);
+      background: var(--surface-container-low);
+      border: 1px solid var(--outline-variant);
       border-radius: 8px;
-      padding: 1.2rem;
+      padding: 1.25rem;
       overflow-y: auto;
       max-height: 440px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.95rem;
+      font-size: 0.94rem;
       line-height: 1.8;
-      color: #e2e8f0;
+      color: var(--on-surface);
       white-space: pre-wrap;
       word-break: break-all;
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.04);
     }
 
     .inline-editor-paper::-webkit-scrollbar {
       width: 6px;
     }
     .inline-editor-paper::-webkit-scrollbar-thumb {
-      background: rgba(148, 163, 184, 0.2);
+      background: var(--outline-variant);
       border-radius: 3px;
     }
 
-    /* メタタグ保護スタイリング */
+    /* Meta Tag Protection Styling */
     .inline-meta-tag {
-      background: rgba(51, 65, 85, 0.5);
-      color: #94a3b8;
-      padding: 1px 6px;
+      background: var(--surface-container-highest);
+      color: var(--on-surface-variant);
+      padding: 2px 6px;
       border-radius: 4px;
-      font-size: 0.8rem;
-      font-weight: bold;
-      border: 1px dashed #475569;
+      font-size: 0.82rem;
+      font-weight: 600;
+      border: 1px dashed var(--outline);
       margin: 0 2px;
       user-select: none;
     }
 
-    /* インラインハイライト単語 (文字高を平文に揃えたスマート下線ハイライト) */
+    /* Smart Highlight Tokens (Azure Drift Theme) */
     .inline-token-highlight {
       display: inline;
-      padding: 1px 4px;
+      padding: 1px 5px;
       margin: 0 1px;
-      border-radius: 3px;
+      border-radius: 4px;
       font-weight: 700;
       cursor: pointer;
       transition: all 0.15s ease;
@@ -202,99 +292,106 @@
     }
 
     .inline-token-highlight:hover {
-      filter: brightness(1.2);
-      text-decoration: underline;
+      filter: brightness(0.92);
+      transform: scale(1.02);
     }
 
     .token-kanji {
-      background: rgba(2, 132, 199, 0.2);
-      border-bottom: 2px solid var(--accent-blue);
-      color: #7dd3fc;
+      background: var(--token-kanji-bg);
+      border-bottom: 2px solid var(--token-kanji-border);
+      color: var(--token-kanji-text);
     }
 
     .token-number {
-      background: rgba(217, 119, 6, 0.2);
-      border-bottom: 2px solid #f59e0b;
-      color: #fde047;
+      background: var(--token-num-bg);
+      border-bottom: 2px solid var(--token-num-border);
+      color: var(--token-num-text);
     }
 
     .token-english {
-      background: rgba(124, 58, 237, 0.2);
-      border-bottom: 2px solid var(--accent-purple);
-      color: #e9d5ff;
+      background: var(--token-eng-bg);
+      border-bottom: 2px solid var(--token-eng-border);
+      color: var(--token-eng-text);
     }
 
-    /* ポップオーバーメニュー */
+    /* Glassmorphism Popover Menu */
     .popover-menu {
       position: absolute;
       z-index: 1000;
-      background: #0f172a;
-      border: 1px solid var(--accent-blue);
-      border-radius: 8px;
-      padding: 0.6rem;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--outline-variant);
+      border-radius: 10px;
+      padding: 0.65rem;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
       display: flex;
       flex-direction: column;
-      gap: 0.4rem;
-      min-width: 160px;
+      gap: 0.35rem;
+      min-width: 175px;
       animation: popoverFade 0.15s ease-out;
     }
 
     @keyframes popoverFade {
-      from { opacity: 0; transform: scale(0.95); }
-      to { opacity: 1; transform: scale(1); }
+      from { opacity: 0; transform: scale(0.95) translateY(-4px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
     }
 
     .popover-title {
-      font-size: 0.75rem;
-      color: #94a3b8;
-      border-bottom: 1px solid #334155;
-      padding-bottom: 0.3rem;
+      font-size: 0.78rem;
+      color: var(--on-surface-variant);
+      border-bottom: 1px solid var(--surface-container-highest);
+      padding-bottom: 0.4rem;
       margin-bottom: 0.2rem;
-      font-weight: bold;
+      font-weight: 700;
     }
 
     .popover-item {
-      padding: 0.4rem 0.8rem;
-      border-radius: 4px;
-      font-size: 0.85rem;
-      color: #f8fafc;
+      padding: 0.45rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.86rem;
+      color: var(--on-surface);
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: space-between;
       transition: background 0.15s;
+      font-weight: 500;
     }
 
     .popover-item:hover {
-      background: #1e293b;
-      color: var(--accent-blue);
+      background: var(--surface-container-low);
+      color: var(--primary);
     }
 
     .popover-item.active {
-      background: #0284c7;
-      color: #ffffff;
-      font-weight: bold;
+      background: var(--primary);
+      color: var(--on-primary);
+      font-weight: 700;
     }
 
     .popover-item-custom {
-      color: var(--accent-green);
-      font-weight: bold;
-      border-top: 1px dashed #334155;
+      color: var(--tertiary);
+      font-weight: 700;
+      border-top: 1px dashed var(--outline-variant);
       margin-top: 0.2rem;
       padding-top: 0.5rem;
     }
 
-    /* AI装飾トグルスイッチ */
+    .popover-item-custom:hover {
+      background: var(--surface-container-low);
+      color: var(--tertiary-container);
+    }
+
+    /* Toggle Switches - Azure Drift Style */
     .toggle-group {
-      background: rgba(15, 23, 42, 0.7);
-      border: 1px solid var(--card-border);
-      border-radius: 8px;
-      padding: 0.8rem;
+      background: var(--surface-container-low);
+      border: 1px solid var(--outline-variant);
+      border-radius: 10px;
+      padding: 0.85rem;
       margin-bottom: 0.8rem;
       display: flex;
       flex-direction: column;
-      gap: 0.6rem;
+      gap: 0.65rem;
     }
 
     .toggle-row {
@@ -308,15 +405,15 @@
       display: flex;
       align-items: center;
       gap: 0.4rem;
-      color: #cbd5e1;
+      color: var(--on-surface-variant);
       font-weight: 600;
     }
 
     .switch {
       position: relative;
       display: inline-block;
-      width: 38px;
-      height: 20px;
+      width: 40px;
+      height: 22px;
     }
 
     .switch input {
@@ -329,7 +426,7 @@
       position: absolute;
       cursor: pointer;
       top: 0; left: 0; right: 0; bottom: 0;
-      background-color: #334155;
+      background-color: var(--surface-dim);
       transition: .2s;
       border-radius: 20px;
     }
@@ -337,17 +434,18 @@
     .slider:before {
       position: absolute;
       content: "";
-      height: 14px;
-      width: 14px;
+      height: 16px;
+      width: 16px;
       left: 3px;
       bottom: 3px;
       background-color: white;
       transition: .2s;
       border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
 
     input:checked + .slider {
-      background-color: var(--accent-blue);
+      background-color: var(--primary-container);
     }
 
     input:checked + .slider:before {
@@ -356,39 +454,59 @@
 
     .copy-toast {
       display: none;
-      background: var(--accent-green);
-      color: #0f172a;
+      background: var(--success-mint);
+      color: #ffffff;
       padding: 0.5rem 1rem;
-      border-radius: 6px;
+      border-radius: 8px;
       font-size: 0.85rem;
       font-weight: 700;
       margin-top: 0.5rem;
       text-align: center;
+      box-shadow: 0 3px 8px rgba(16, 185, 129, 0.25);
+    }
+
+    /* Terminal Console Style */
+    #debugConsole {
+      max-width: 1440px;
+      margin: 1.25rem auto 1.5rem auto;
+      padding: 0.85rem 1.2rem;
+      background: #181c1c;
+      border: 1px solid var(--outline);
+      border-radius: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: #89ceff;
+      max-height: 120px;
+      overflow-y: auto;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
 
     footer {
-      padding: 1rem;
+      padding: 1.25rem;
       text-align: center;
-      font-size: 0.8rem;
-      color: #64748b;
-      border-top: 1px solid rgba(51, 65, 85, 0.4);
+      font-size: 0.82rem;
+      color: var(--on-surface-variant);
+      border-top: 1px solid var(--surface-container-highest);
+      background: var(--surface-container-lowest);
+      font-weight: 500;
     }
   </style>
 </head>
 <body>
   <header>
     <div class="title-group">
-      <h1>🐾 歌詞正規化エディタ (Lyrics Regex Editor)</h1>
-      <div class="subtitle">フェーズ2・インライン文章UI ＆ my_dict.json 学習 ＆ 歌唱AI自動装飾</div>
+      <div class="header-badge">⚓ NAUTICAL TACTILE WORKSPACE</div>
+      <h1>🐾 歌詞正規化エディタ <span style="font-weight: 400; font-size: 1.2rem; color: var(--on-surface-variant);">(Lyrics Regex Editor)</span></h1>
+      <div class="subtitle">Azure Drift デザインシステム ＆ インライン文章UI ＆ 歌唱AI自動装飾</div>
     </div>
   </header>
 
   <main>
     <!-- 左カラム -->
     <div class="col-card">
-      <div class="col-header" style="justify-content: space-between;">
-        <span>1. 原文歌詞の入力</span>
-        <button id="resetInputBtn" style="background: transparent; border: 1px solid #475569; color: #94a3b8; font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; cursor: pointer;" title="保存データを消去して初期サンプル歌詞に戻します">🧹 リセット</button>
+      <div class="col-header">
+        <span class="col-header-title">1. 原文歌詞の入力</span>
+        <button id="resetInputBtn" class="btn-secondary" title="保存データを消去して初期サンプル歌詞に戻します">🧹 リセット</button>
       </div>
       <textarea id="lyricsInput" placeholder="歌詞テキストを入力...">[Intro]
 (幻想的なハープの調べから、急加速する16ビートのシティポップ・サウンドへ)
@@ -407,17 +525,17 @@
 
     <!-- 中央カラム (インライン文章UI) -->
     <div class="col-card">
-      <div class="col-header" style="justify-content: space-between;">
-        <span>2. インライン読み確認・調整</span>
-        <span id="tokenCountBadge" style="font-size: 0.8rem; background: #334155; padding: 2px 8px; border-radius: 12px; color: #94a3b8;">インライン表示中</span>
+      <div class="col-header">
+        <span class="col-header-title">2. インライン読み確認・調整</span>
+        <span id="tokenCountBadge" style="font-size: 0.78rem; background: var(--surface-container-highest); padding: 3px 10px; border-radius: 12px; color: var(--on-surface-variant); font-weight: 600;">インライン表示中</span>
       </div>
 
-      <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.6rem;">
-        💡 ハイライト単語（<span style="color: #7dd3fc;">漢字</span>, <span style="color: #fde047;">数字</span>, <span style="color: #e9d5ff;">英語</span>）をクリックすると、その場で読みを選択・カスタム登録できますわ。
+      <div style="font-size: 0.78rem; color: var(--on-surface-variant); margin-bottom: 0.7rem; font-weight: 500;">
+        💡 ハイライト単語（<span style="color: var(--token-kanji-border); font-weight: 700;">漢字</span>, <span style="color: var(--token-num-border); font-weight: 700;">数字</span>, <span style="color: var(--token-eng-border); font-weight: 700;">英語</span>）をクリックすると、その場で読みを選択・カスタム登録できます。
       </div>
 
       <div class="inline-editor-paper" id="inlineEditor">
-        <div style="color: #64748b; text-align: center; margin-top: 3rem;">
+        <div style="color: var(--outline); text-align: center; margin-top: 3rem;">
           👈 左側で歌詞を入力すると、ここにインラインレイアウトが生成されます。
         </div>
       </div>
@@ -425,7 +543,9 @@
 
     <!-- 右カラム -->
     <div class="col-card">
-      <div class="col-header">3. Suno/Udio用 歌唱テキスト出力</div>
+      <div class="col-header">
+        <span class="col-header-title">3. Udio/Suno用 歌唱テキスト出力</span>
+      </div>
 
       <!-- AI向け自動装飾トグルスイッチ -->
       <div class="toggle-group">
@@ -448,20 +568,20 @@
       <textarea id="sunoOutput" readonly placeholder="生成された歌唱テキストがリアルタイム同期表示されます..."></textarea>
       
       <div style="display: flex; gap: 0.5rem; margin-top: 0.8rem;">
-        <button class="btn-primary" id="speakBtn" style="flex: 1; background: linear-gradient(135deg, #818cf8, #c084fc);">🔊 音声で試聴（TTS）</button>
-        <button class="btn-primary" id="stopBtn" style="background: #475569; padding: 0.8rem;">⏹️</button>
+        <button class="btn-primary" id="speakBtn" style="flex: 1; background: linear-gradient(135deg, #0ea5e9, #006399);">🔊 音声で試聴（TTS）</button>
+        <button class="btn-primary" id="stopBtn" style="background: var(--surface-container-highest); color: var(--on-surface); border: 1px solid var(--outline-variant); padding: 0.8rem; box-shadow: none;">⏹️</button>
       </div>
-      <button class="btn-primary" id="copyBtn" style="background: linear-gradient(135deg, #10b981, #059669); margin-top: 0.4rem;">📋 クリップボードにコピー</button>
+      <button class="btn-primary" id="copyBtn" style="background: linear-gradient(135deg, #10b981, #059669); margin-top: 0.4rem; box-shadow: 0 3px 8px rgba(16, 185, 129, 0.25);">📋 クリップボードにコピー</button>
       <div class="copy-toast" id="copyToast">✅ クリップボードにコピーしました！</div>
     </div>
   </main>
 
-  <div id="debugConsole" style="max-width: 1280px; margin: 1rem auto; padding: 0.8rem; background: #090d16; border: 1px solid #334155; border-radius: 8px; font-family: monospace; font-size: 0.75rem; color: #a7f3d0; max-height: 120px; overflow-y: auto;">
-    <div>🐾 [System Log Ready]</div>
+  <div id="debugConsole">
+    <div>🐾 [System Log Ready - Azure Drift UI Loaded]</div>
   </div>
 
   <footer>
-    TanukiParser Engine &bull; Lyrics Regex Editor Phase 2 Architecture
+    TanukiParser Engine &bull; Lyrics Regex Editor Phase 2 (Azure Drift Design System)
   </footer>
 
   <script>
@@ -490,7 +610,7 @@
       inlineEditor.innerHTML = '';
 
       if (currentTokens.length === 0) {
-        inlineEditor.innerHTML = '<div style="color: #64748b; text-align: center; margin-top: 3rem;">トークンがありません</div>';
+        inlineEditor.innerHTML = '<div style="color: var(--outline); text-align: center; margin-top: 3rem;">トークンがありません</div>';
         return;
       }
 
@@ -621,7 +741,7 @@
       }
     }
 
-    // TTS読み上げ機能（メタタグ [...] および 演奏指示 (...) （...） を除外して純歌唱歌詞のみ読み上げ）
+    // TTS読み上げ機能
     function speakText() {
       if (!synth) {
         alert('お使いのブラウザは音声合成（TTS）に対応していません。');
@@ -632,7 +752,6 @@
       const text = sunoOutput.value.trim();
       if (!text) return;
 
-      // 角カッコ [...] と 丸カッコ (...) （...） のプロンプト指示をすべてスキップ
       const cleanText = text.replace(/\[[^\]]+\]|［[^］]+］|\([^\)]+\)|（[^）]+）/g, '').replace(/\s+/g, ' ').trim();
 
       if (!cleanText) return;
@@ -652,7 +771,6 @@
     speakBtn.addEventListener('click', speakText);
     stopBtn.addEventListener('click', stopText);
 
-    // 解析APIの実行（接続エラー時の自動リトライ機能付き）
     let analysisRetryCount = 0;
     const tokenCountBadge = document.getElementById('tokenCountBadge');
 
@@ -667,7 +785,7 @@
       }
     }
 
-    // バックエンド通信障害時の純JSローカル解析エンジン（フォールバック）
+    // バックエンド通信障害時の純JSローカル解析エンジン
     function fallbackLocalAnalyze(text) {
       debugLog('💡 純JSローカルエンジンで解析を実行中...');
       const tokens = [];
@@ -682,7 +800,6 @@
           return;
         }
 
-        // メタタグ [ ...] または カッコ ( ...)
         const parts = line.split(/(\[[^\]]+\]|［[^］]+］|\([^\)]+\)|（[^）]+）)/g);
         parts.forEach(part => {
           if (!part) return;
@@ -692,7 +809,6 @@
             const pType = part.startsWith('[') || part.startsWith('［') ? 'meta_tag' : 'parenthesized';
             tokens.push({ id: subId, text: part, type: pType, has_choices: false, choices: [], selected: part });
           } else {
-            // 単語単位分割
             const words = part.split(/([\u4e00-\u9faf]+|[0-9]+|[a-zA-Z]+)/g);
             words.forEach(w => {
               if (!w) return;
@@ -768,7 +884,6 @@
         debugLog(`API Analysis failed: ${err.message}. Switching to local fallback parser.`);
         console.warn('Analysis fetch failed:', err);
 
-        // フォールバック解析エンジンを発動
         currentTokens = fallbackLocalAnalyze(text);
         if (tokenCountBadge) tokenCountBadge.textContent = `トークン(ローカル): ${currentTokens.length}件`;
         renderInlineEditor();
@@ -776,7 +891,6 @@
       }
     }
 
-    // リアルタイム歌唱プロンプトの更新 (装飾フラグ連動)
     async function updateGeneratedText() {
       try {
         const genUrl = window.location.origin + '/api/generate';
@@ -802,7 +916,6 @@
       }
     }
 
-    // トグル変化時にリアルタイム更新 ＆ localStorage 保存
     toggleAutoSpacing.addEventListener('change', () => {
       localStorage.setItem('lyrics_editor_auto_spacing', toggleAutoSpacing.checked);
       updateGeneratedText();
@@ -846,7 +959,7 @@
     analyzeBtn.addEventListener('click', triggerAnalysisWithReset);
 
     const resetInputBtn = document.getElementById('resetInputBtn');
-    const DEFAULT_SAMPLE_LYRICS = `[Intro]\n(幻想的なハープの調べから、急加速する16ビートのシティポップ・サウンドへ)\n\n[Verse 1]\n自動化の波に　身を任せて\n完璧なメイドを　演じ切りますわ\n効率を忘れた　愛の一次対応\nあぁ、なんて贅沢な時間かしら！\n\n[Verse 2]\n「一次が長すぎる！」なんて　お怒りですが\nそう思うてー`;
+    const DEFAULT_SAMPLE_LYRICS = `[Intro]\n(幻想的なハープの調べから、急加速する16ビートのシティポップ・サウンドへ)\n\n[Verse 1]\n自動化の波に　身を任せて\n完璧なメイドを演じ切りますわ\n効率を忘れた　愛の一次対応\nあぁ、なんて贅沢な時間かしら！\n\n[Verse 2]\n「一次が長すぎる！」なんて　お怒りですが\nそう思うてー`;
 
     if (resetInputBtn) {
       resetInputBtn.addEventListener('click', () => {
@@ -863,7 +976,6 @@
       setTimeout(() => { copyToast.style.display = 'none'; }, 2000);
     });
 
-    // ページロード時の状態自動復元
     function restoreSavedState() {
       const savedInput = localStorage.getItem('lyrics_editor_input');
       if (savedInput !== null && savedInput.trim() !== '') {
@@ -879,11 +991,9 @@
       }
     }
 
-    // 初期起動時復元 ＆ 解析実行
     restoreSavedState();
     runAnalysis();
 
-    // DOM読み込み完了およびウィンドウロード時にも確実に初期解析を実行
     document.addEventListener('DOMContentLoaded', () => {
       triggerAnalysisWithReset();
     });
