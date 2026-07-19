@@ -449,6 +449,10 @@
     </div>
   </main>
 
+  <div id="debugConsole" style="max-width: 1280px; margin: 1rem auto; padding: 0.8rem; background: #090d16; border: 1px solid #334155; border-radius: 8px; font-family: monospace; font-size: 0.75rem; color: #a7f3d0; max-height: 120px; overflow-y: auto;">
+    <div>🐾 [System Log Ready]</div>
+  </div>
+
   <footer>
     TanukiParser Engine &bull; Lyrics Regex Editor Phase 2 Architecture
   </footer>
@@ -647,6 +651,70 @@
 
     function debugLog(msg) {
       console.log('🐾 [LyricsEditor]', msg);
+      const consoleEl = document.getElementById('debugConsole');
+      if (consoleEl) {
+        const item = document.createElement('div');
+        item.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+        consoleEl.appendChild(item);
+        consoleEl.scrollTop = consoleEl.scrollHeight;
+      }
+    }
+
+    // バックエンド通信障害時の純JSローカル解析エンジン（フォールバック）
+    function fallbackLocalAnalyze(text) {
+      debugLog('💡 純JSローカルエンジンで解析を実行中...');
+      const tokens = [];
+      let counter = 0;
+      const lines = text.split('\n');
+
+      lines.forEach((line, lIdx) => {
+        if (!line.trim()) {
+          counter++;
+          tokens.push({ id: `sub_${counter:04d}`, text: '\n', type: 'newline', has_choices: false, choices: [], selected: '\n' });
+          return;
+        }
+
+        // メタタグ [ ...] または カッコ ( ...)
+        const parts = line.split(/(\[[^\]]+\]|［[^］]+］|\([^\)]+\)|（[^）]+）)/g);
+        parts.forEach(part => {
+          if (!part) return;
+          if (/^(\[[^\]]+\]|［[^］]+］|\([^\)]+\)|（[^）]+）)$/.test(part)) {
+            counter++;
+            const pType = part.startsWith('[') || part.startsWith('［') ? 'meta_tag' : 'parenthesized';
+            tokens.push({ id: `sub_${counter:04d}`, text: part, type: pType, has_choices: false, choices: [], selected: part });
+          } else {
+            // 単語単位分割
+            const words = part.split(/([\u4e00-\u9faf]+|[0-9]+|[a-zA-Z]+)/g);
+            words.forEach(w => {
+              if (!w) return;
+              counter++;
+              const isKanji = /[\u4e00-\u9faf]+/.test(w);
+              const isNum = /[0-9]+/.test(w);
+              const isEng = /[a-zA-Z]+/.test(w);
+              let wType = 'plain';
+              if (isKanji) wType = 'kanji';
+              else if (isNum) wType = 'number';
+              else if (isEng) wType = 'english';
+
+              tokens.push({
+                id: `sub_${counter:04d}`,
+                text: w,
+                type: wType,
+                has_choices: isKanji || isNum || isEng,
+                choices: [w],
+                selected: w
+              });
+            });
+          }
+        });
+
+        if (lIdx < lines.length - 1) {
+          counter++;
+          tokens.push({ id: `sub_${counter:04d}`, text: '\n', type: 'newline', has_choices: false, choices: [], selected: '\n' });
+        }
+      });
+
+      return tokens;
     }
 
     async function runAnalysis() {
@@ -677,7 +745,7 @@
         currentTokens = data.tokens || [];
         analysisRetryCount = 0;
 
-        debugLog(`Analysis succeeded! Received ${currentTokens.length} tokens.`);
+        debugLog(`API Analysis succeeded! Received ${currentTokens.length} tokens.`);
 
         if (tokenCountBadge) {
           tokenCountBadge.textContent = `トークン: ${currentTokens.length}件`;
@@ -686,16 +754,14 @@
         renderInlineEditor();
         updateGeneratedText();
       } catch (err) {
-        debugLog(`Analysis failed: ${err.message}`);
+        debugLog(`API Analysis failed: ${err.message}. Switching to local fallback parser.`);
         console.warn('Analysis fetch failed:', err);
-        if (tokenCountBadge) tokenCountBadge.textContent = '⚠️ 通信エラー';
-        if (inlineEditor && currentTokens.length === 0) {
-          inlineEditor.innerHTML = `<div style="color: #ef4444; text-align: center; margin-top: 2rem;">⚠️ サーバー通信エラー: ${err.message}<br><small style="color: #94a3b8;">python3 web_server.py が起動しているか確認してください</small></div>`;
-        }
-        if (analysisRetryCount < 10) {
-          analysisRetryCount++;
-          setTimeout(runAnalysis, 500);
-        }
+
+        // フォールバック解析エンジンを発動
+        currentTokens = fallbackLocalAnalyze(text);
+        if (tokenCountBadge) tokenCountBadge.textContent = `トークン(ローカル): ${currentTokens.length}件`;
+        renderInlineEditor();
+        updateGeneratedText();
       }
     }
 
@@ -716,7 +782,12 @@
         const data = await res.json();
         sunoOutput.value = data.text || '';
       } catch (err) {
-        console.warn('Generate fetch failed:', err);
+        debugLog(`Generate fetch failed: ${err.message}. Generating locally.`);
+        let out = '';
+        currentTokens.forEach(t => {
+          out += t.selected || t.text || '';
+        });
+        sunoOutput.value = out;
       }
     }
 
