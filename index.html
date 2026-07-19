@@ -673,7 +673,8 @@
       lines.forEach((line, lIdx) => {
         if (!line.trim()) {
           counter++;
-          tokens.push({ id: `sub_${counter:04d}`, text: '\n', type: 'newline', has_choices: false, choices: [], selected: '\n' });
+          const subId = `sub_${String(counter).padStart(4, '0')}`;
+          tokens.push({ id: subId, text: '\n', type: 'newline', has_choices: false, choices: [], selected: '\n' });
           return;
         }
 
@@ -683,14 +684,16 @@
           if (!part) return;
           if (/^(\[[^\]]+\]|［[^］]+］|\([^\)]+\)|（[^）]+）)$/.test(part)) {
             counter++;
+            const subId = `sub_${String(counter).padStart(4, '0')}`;
             const pType = part.startsWith('[') || part.startsWith('［') ? 'meta_tag' : 'parenthesized';
-            tokens.push({ id: `sub_${counter:04d}`, text: part, type: pType, has_choices: false, choices: [], selected: part });
+            tokens.push({ id: subId, text: part, type: pType, has_choices: false, choices: [], selected: part });
           } else {
             // 単語単位分割
             const words = part.split(/([\u4e00-\u9faf]+|[0-9]+|[a-zA-Z]+)/g);
             words.forEach(w => {
               if (!w) return;
               counter++;
+              const subId = `sub_${String(counter).padStart(4, '0')}`;
               const isKanji = /[\u4e00-\u9faf]+/.test(w);
               const isNum = /[0-9]+/.test(w);
               const isEng = /[a-zA-Z]+/.test(w);
@@ -700,7 +703,7 @@
               else if (isEng) wType = 'english';
 
               tokens.push({
-                id: `sub_${counter:04d}`,
+                id: subId,
                 text: w,
                 type: wType,
                 has_choices: isKanji || isNum || isEng,
@@ -713,7 +716,8 @@
 
         if (lIdx < lines.length - 1) {
           counter++;
-          tokens.push({ id: `sub_${counter:04d}`, text: '\n', type: 'newline', has_choices: false, choices: [], selected: '\n' });
+          const subId = `sub_${String(counter).padStart(4, '0')}`;
+          tokens.push({ id: subId, text: '\n', type: 'newline', has_choices: false, choices: [], selected: '\n' });
         }
       });
 
