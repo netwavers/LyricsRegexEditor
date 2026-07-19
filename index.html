@@ -834,7 +834,7 @@
     // ページロード時の状態自動復元
     function restoreSavedState() {
       const savedInput = localStorage.getItem('lyrics_editor_input');
-      if (savedInput !== null) {
+      if (savedInput !== null && savedInput.trim() !== '') {
         lyricsInput.value = savedInput;
       }
       const savedSpacing = localStorage.getItem('lyrics_editor_auto_spacing');

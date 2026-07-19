@@ -34,8 +34,8 @@ def start_server_and_wait():
 def launch_desktop_app():
     """PyWebView または Chrome/Chromium アプリモードで独立ウィンドウを立ち上げる"""
     base_url = start_server_and_wait()
-    # キャッシュを回避するためにタイムスタンプクエリパラメータを付与
-    app_url = f"{base_url}/?_t={int(time.time())}"
+    # 物理キャッシュバスター（ミリ秒タイムスタンプ）
+    app_url = f"{base_url}/index.html?v={int(time.time() * 1000)}"
     print(f"🐾 歌詞正規化エディタ デスクトップアプリを起動中... ({app_url})")
 
     # 1. PyWebView が利用可能な場合
