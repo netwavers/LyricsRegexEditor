@@ -49,15 +49,17 @@ LyricsRegexEditor/
 
 ## 🚀 起動方法
 
-依存関係は Python 標準ライブラリのみで構成されているため、特別なインストールなしで即座に動作します。（※ デスクトップアプリ化に `pywebview` を使用）
+依存関係は Python 標準ライブラリのみで構成されているため、特別なインストールなしで即座に動作します！
 
-### デスクトップアプリとして起動（推奨）
+### Web アプリケーションとして起動（推奨）
 
-- **Linux**: `./launch_desktop.sh` または `python3 desktop_app.py`
-- **Windows**: `launch_desktop.bat` をダブルクリック、または `python desktop_app.py`
-- **macOS**: `launch_desktop.command` をダブルクリック、または `python3 desktop_app.py`
+ワンクリックで Web サーバーが起動し、自動的に既定のブラウザでアプリが開きます。
 
-### スタンドアロン Web サーバーとして起動
+- **Linux**: `./launch_desktop.sh` または `python3 web_server.py`
+- **Windows**: `launch_desktop.bat` をダブルクリック、または `python web_server.py`
+- **macOS**: `launch_desktop.command` をダブルクリック、または `python3 web_server.py`
+
+ブラウザアクセスURL: `http://127.0.0.1:8088`
 
 ```bash
 python3 web_server.py
