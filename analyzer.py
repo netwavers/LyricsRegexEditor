@@ -1,29 +1,24 @@
+import os
+import sys
 import re
 from typing import List, Dict, Any
 
+from lyrics_lexer import LyricsLexer
+from lyrics_parser import LyricsParser, TokenType
+
 class LyricsAnalyzer:
     """
-    歌詞テキストを「メタタグ [...]」「カッコ ( ... )」「改行」「一般テキスト」に構造分離するアナライザー。
-    仕様書 2.1 / 3.1 準拠
+    EBNF構文解析器 (LyricsParser) を用いて、歌詞テキストを
+    「メタタグ [...]」「カッコ ( ... )」「改行」「一般テキスト」に構造分離する公式アナライザー。
     """
 
-    # メタタグ [Verse 1] や ［Chorus］ などをマッチするパターン
-    META_PATTERN = re.compile(r'(\[[^\]\r\n]+\]|［[^］\r\n]+］)')
-    # カッコ (Yeah) や （コーラス） などをマッチするパターン
-    PAREN_PATTERN = re.compile(r'(\([^\)\r\n]+\)|（[^）\r\n]+）)')
-
     def analyze(self, text: str) -> List[Dict[str, Any]]:
-        """
-        歌詞文字列を解析し、初期ノードリストを作成します。
-        """
         nodes = []
         node_counter = 0
 
-        # 改行でまず行単位、またはToken単位に分解する
         lines = text.splitlines(keepends=True)
 
         for line in lines:
-            # 改行のみの行
             if line == '\n' or line == '\r\n':
                 node_counter += 1
                 nodes.append({
@@ -34,7 +29,6 @@ class LyricsAnalyzer:
                 })
                 continue
 
-            # 改行コードを末尾から分離
             line_text = line
             line_ending = ""
             if line_text.endswith('\r\n'):
@@ -44,50 +38,31 @@ class LyricsAnalyzer:
                 line_ending = '\n'
                 line_text = line_text[:-1]
 
-            # 行内を メタタグ [...] で分割
-            parts = self.META_PATTERN.split(line_text)
-            for part in parts:
-                if not part:
-                    continue
-
-                if self.META_PATTERN.fullmatch(part):
-                    # メタタグノード（編集不可・解析対象外）
-                    node_counter += 1
+            parsed_chunks = self._split_line_ebnf(line_text)
+            for chunk_text, chunk_type in parsed_chunks:
+                node_counter += 1
+                if chunk_type == "meta_tag":
                     nodes.append({
                         "id": f"node_{node_counter:03d}",
-                        "text": part,
+                        "text": chunk_text,
                         "type": "meta_tag",
                         "analyze": False
                     })
+                elif chunk_type == "parenthesized":
+                    nodes.append({
+                        "id": f"node_{node_counter:03d}",
+                        "text": chunk_text,
+                        "type": "parenthesized",
+                        "analyze": True
+                    })
                 else:
-                    # カッコ ( ... ) でさらに分割
-                    sub_parts = self.PAREN_PATTERN.split(part)
-                    for sub_part in sub_parts:
-                        if not sub_part:
-                            continue
-                        
-                        if self.PAREN_PATTERN.fullmatch(sub_part):
-                            # カッコ内ノード
-                            # カッコ記号自体は保護しつつ内部のテキストを細分化できるよう分離処理するか、
-                            # ノードとして登録
-                            node_counter += 1
-                            nodes.append({
-                                "id": f"node_{node_counter:03d}",
-                                "text": sub_part,
-                                "type": "parenthesized",
-                                "analyze": True # カッコ内テキストも読み補正の対象
-                            })
-                        else:
-                            # 通常テキストノード（解析対象）
-                            node_counter += 1
-                            nodes.append({
-                                "id": f"node_{node_counter:03d}",
-                                "text": sub_part,
-                                "type": "text",
-                                "analyze": True
-                            })
+                    nodes.append({
+                        "id": f"node_{node_counter:03d}",
+                        "text": chunk_text,
+                        "type": "text",
+                        "analyze": True
+                    })
 
-            # 改行ノード
             if line_ending:
                 node_counter += 1
                 nodes.append({
@@ -99,9 +74,57 @@ class LyricsAnalyzer:
 
         return nodes
 
+    def _split_line_ebnf(self, line_text: str) -> List[tuple]:
+        if not line_text:
+            return []
+
+        chunks = []
+        raw_tags = []
+        try:
+            lexer = LyricsLexer(line_text)
+            parser = LyricsParser(lexer)
+
+            def tag_h(tag_text, tag_type):
+                t_type = "meta_tag" if tag_type == "B" else "parenthesized"
+                raw_tags.append((tag_text, t_type))
+                return ""
+
+            parser.tag_handler = tag_h
+            parser.token = lexer.get_token()
+
+            current_text = []
+
+            while parser.token and parser.token.token_type is not None:
+                tt = parser.token.token_type
+                if tt in (TokenType.OPEN_BRACKET, TokenType.OPEN_BRACKET_FULL, TokenType.OPEN_PAREN, TokenType.OPEN_PAREN_FULL, TokenType.ANGLE_LEFT):
+                    if current_text:
+                        chunks.append((''.join(current_text), 'text'))
+                        current_text.clear()
+
+                    raw_tags.clear()
+                    prev_pos = lexer.token_pos
+                    res = parser.tag()
+                    if res is None or lexer.token_pos == prev_pos:
+                        current_text.append(parser.token.content)
+                        parser.token = lexer.get_token()
+                    elif raw_tags:
+                        top_tag_text, top_tag_type = raw_tags[-1]
+                        chunks.append((top_tag_text, top_tag_type))
+                else:
+                    current_text.append(parser.token.content)
+                    parser.token = lexer.get_token()
+
+            if current_text:
+                chunks.append((''.join(current_text), 'text'))
+
+        except Exception as e:
+            chunks = [(line_text, 'text')]
+
+        return chunks
+
 
 if __name__ == "__main__":
-    sample = "[Verse 1]\n明日(Yeah)100光年の宇宙へ\n[Chorus]\nFly away!"
+    sample = "AIさんの指先が　魔法をかけるわ\n(A#m7 - D#7(11) - G#m7 - C#7/F)\n(A#m7 - D#7（11） - G#m7 - C#7/F)\nけれど気づいたときには　お財布は空っぽ"
     analyzer = LyricsAnalyzer()
     res = analyzer.analyze(sample)
     import json

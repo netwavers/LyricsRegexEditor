@@ -76,11 +76,12 @@
       background: var(--surface-container-lowest);
       border-bottom: 2px solid var(--surface-container-highest);
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .title-group {
-      max-width: 1440px;
-      margin: 0 auto;
       display: flex;
       flex-direction: column;
     }
@@ -499,6 +500,11 @@
       <h1>🐾 歌詞正規化エディタ <span style="font-weight: 400; font-size: 1.2rem; color: var(--on-surface-variant);">(Lyrics Regex Editor)</span></h1>
       <div class="subtitle">Azure Drift デザインシステム ＆ インライン文章UI ＆ 歌唱AI自動装飾</div>
     </div>
+    <div id="embedActionContainer" style="display: none;">
+      <button class="btn-primary" id="applySonicEtherBtn" style="background: linear-gradient(135deg, #10b981, #059669); padding: 0.75rem 1.5rem; font-size: 0.95rem; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);">
+        ✨ SonicEther に適用
+      </button>
+    </div>
   </header>
 
   <main>
@@ -578,7 +584,8 @@
         <button class="btn-primary" id="speakBtn" style="flex: 1; background: linear-gradient(135deg, #0ea5e9, #006399);">🔊 音声で試聴（TTS）</button>
         <button class="btn-primary" id="stopBtn" style="background: var(--surface-container-highest); color: var(--on-surface); border: 1px solid var(--outline-variant); padding: 0.8rem; box-shadow: none;">⏹️</button>
       </div>
-      <button class="btn-primary" id="copyBtn" style="background: linear-gradient(135deg, #10b981, #059669); margin-top: 0.4rem; box-shadow: 0 3px 8px rgba(16, 185, 129, 0.25);">📋 クリップボードにコピー</button>
+      <button class="btn-primary" id="copyBtn" style="background: linear-gradient(135deg, #0ea5e9, #006399); margin-top: 0.4rem; box-shadow: 0 3px 8px rgba(14, 165, 233, 0.25);">📋 クリップボードにコピー</button>
+      <button class="btn-primary" id="applySonicEtherBtnRight" style="display: none; background: linear-gradient(135deg, #10b981, #059669); margin-top: 0.4rem; box-shadow: 0 3px 8px rgba(16, 185, 129, 0.25);">✨ SonicEther に適用</button>
       <div class="copy-toast" id="copyToast">✅ クリップボードにコピーしました！</div>
     </div>
   </main>
@@ -750,25 +757,124 @@
       }
     }
 
-    // TTS読み上げ機能
-    function speakText() {
+    function isChordLineJS(line) {
+      const clean = line.replace(/[()（）\[\]［］<>]/g, ' ').trim();
+      if (!clean) return false;
+      if (clean.startsWith('-')) return true;
+      
+      const tokens = clean.split(/[\s\-|\/]+/);
+      const chordRegex = /^[A-G][b#]?(m|maj|min|aug|dim|sus|add|[0-9])*\/?([A-G][b#]?)?$/i;
+      
+      let chordCount = 0;
+      let totalTokens = 0;
+      
+      for (const t of tokens) {
+        if (!t) continue;
+        totalTokens++;
+        if (chordRegex.test(t)) chordCount++;
+      }
+      
+      return totalTokens > 0 && (chordCount / totalTokens) >= 0.5;
+    }
+
+    function cleanTextForTTS(rawText) {
+      const lines = rawText.split('\n');
+      const cleanLines = [];
+
+      for (let line of lines) {
+        let res = '';
+        let i = 0;
+        const n = line.length;
+
+        while (i < n) {
+          const ch = line[i];
+          if (ch === '[' || ch === '［') {
+            let depth = 1; i++;
+            while (i < n && depth > 0) {
+              if (line[i] === '[' || line[i] === '［') depth++;
+              else if (line[i] === ']' || line[i] === '］') depth--;
+              i++;
+            }
+          } else if (ch === '(' || ch === '（') {
+            let depth = 1; i++;
+            while (i < n && depth > 0) {
+              if (line[i] === '(' || line[i] === '（') depth++;
+              else if (line[i] === ')' || line[i] === '）') depth--;
+              i++;
+            }
+          } else if (ch === '<' || ch === '＜') {
+            let depth = 1; i++;
+            while (i < n && depth > 0) {
+              if (line[i] === '<' || line[i] === '＜') depth++;
+              else if (line[i] === '>' || line[i] === '＞') depth--;
+              i++;
+            }
+          } else {
+            res += ch;
+            i++;
+          }
+        }
+
+        const trimmedRes = res.trim();
+        if (trimmedRes && !isChordLineJS(trimmedRes) && !line.trim().startsWith('-')) {
+          cleanLines.push(trimmedRes);
+        }
+      }
+
+      return cleanLines.join(' ').replace(/\s+/g, ' ').trim();
+    }
+
+    async function speakText() {
       if (!synth) {
         alert('お使いのブラウザは音声合成（TTS）に対応していません。');
         return;
       }
       synth.cancel();
 
-      const text = sunoOutput.value.trim();
-      if (!text) return;
+      const raw = (sunoOutput && sunoOutput.value.trim()) ? sunoOutput.value.trim() : (lyricsInput ? lyricsInput.value.trim() : '');
+      if (!raw) {
+        alert('読み上げるテキストを入力してください。');
+        return;
+      }
 
-      const cleanText = text.replace(/\[[^\]]+\]|［[^］]+］|\([^\)]+\)|（[^）]+）/g, '').replace(/\s+/g, ' ').trim();
+      let cleanText = '';
+      try {
+        const apiUrl = window.location.origin + '/api/analyze';
+        const res = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: raw })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const tokens = data.tokens || [];
+          const textTokens = tokens.filter(t => t.type !== 'meta_tag' && t.type !== 'parenthesized');
+          cleanText = textTokens.map(t => t.text).join('');
+          cleanText = cleanText.split('\n').filter(line => !isChordLineJS(line)).join('\n').trim();
+        }
+      } catch (e) {
+        debugLog(`TTS EBNF fetch error: ${e}`);
+      }
 
-      if (!cleanText) return;
+      if (!cleanText) {
+        cleanText = cleanTextForTTS(raw);
+      }
+
+      debugLog(`🔊 TTS Speaking text: "${cleanText}"`);
+
+      if (!cleanText) {
+        alert('試聴できる歌詞テキストがありません（メタタグ・カッコ内コード行のみ）。');
+        return;
+      }
 
       const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.lang = 'ja-JP';
       utterance.rate = 1.0;
       utterance.pitch = 1.0;
+
+      const voices = synth.getVoices();
+      const jaVoice = voices.find(v => v.lang && (v.lang.includes('ja') || v.lang.includes('JP')));
+      if (jaVoice) utterance.voice = jaVoice;
 
       synth.speak(utterance);
     }
@@ -794,7 +900,53 @@
       }
     }
 
-    // バックエンド通信障害時の純JSローカル解析エンジン
+    // バックエンド通信障害時の純JSローカル解析エンジン (ネストカッコ対応版)
+    function splitLineJS(lineText) {
+      const chunks = [];
+      let i = 0;
+      const n = lineText.length;
+      let currText = [];
+
+      function flushCurr() {
+        if (currText.length > 0) {
+          chunks.push({ text: currText.join(''), type: 'text' });
+          currText = [];
+        }
+      }
+
+      while (i < n) {
+        const ch = lineText[i];
+        if (ch === '[' || ch === '［') {
+          flushCurr();
+          const start = i;
+          let depth = 1;
+          i++;
+          while (i < n && depth > 0) {
+            if (lineText[i] === '[' || lineText[i] === '［') depth++;
+            else if (lineText[i] === ']' || lineText[i] === '］') depth--;
+            i++;
+          }
+          chunks.push({ text: lineText.slice(start, i), type: 'meta_tag' });
+        } else if (ch === '(' || ch === '（') {
+          flushCurr();
+          const start = i;
+          let depth = 1;
+          i++;
+          while (i < n && depth > 0) {
+            if (lineText[i] === '(' || lineText[i] === '（') depth++;
+            else if (lineText[i] === ')' || lineText[i] === '）') depth--;
+            i++;
+          }
+          chunks.push({ text: lineText.slice(start, i), type: 'parenthesized' });
+        } else {
+          currText.push(ch);
+          i++;
+        }
+      }
+      flushCurr();
+      return chunks;
+    }
+
     function fallbackLocalAnalyze(text) {
       debugLog('💡 純JSローカルエンジンで解析を実行中...');
       const tokens = [];
@@ -809,16 +961,15 @@
           return;
         }
 
-        const parts = line.split(/(\[[^\]]+\]|［[^］]+］|\([^\)]+\)|（[^）]+）)/g);
-        parts.forEach(part => {
-          if (!part) return;
-          if (/^(\[[^\]]+\]|［[^］]+］|\([^\)]+\)|（[^）]+）)$/.test(part)) {
+        const parts = splitLineJS(line);
+        parts.forEach(chunk => {
+          if (!chunk.text) return;
+          if (chunk.type === 'meta_tag' || chunk.type === 'parenthesized') {
             counter++;
             const subId = `sub_${String(counter).padStart(4, '0')}`;
-            const pType = part.startsWith('[') || part.startsWith('［') ? 'meta_tag' : 'parenthesized';
-            tokens.push({ id: subId, text: part, type: pType, has_choices: false, choices: [], selected: part });
+            tokens.push({ id: subId, text: chunk.text, type: chunk.type, has_choices: false, choices: [], selected: chunk.text });
           } else {
-            const words = part.split(/([\u4e00-\u9faf]+|[0-9]+|[a-zA-Z]+)/g);
+            const words = chunk.text.split(/([\u4e00-\u9faf]+|[0-9]+|[a-zA-Z]+)/g);
             words.forEach(w => {
               if (!w) return;
               counter++;
@@ -995,10 +1146,47 @@
       setTimeout(() => { copyToast.style.display = 'none'; }, 2000);
     });
 
+    function applyToSonicEther() {
+      if (window.parent && window.parent !== window) {
+        debugLog('✨ SonicEther へ postMessage (APPLY_LYRICS) を送信中...');
+        window.parent.postMessage({
+          type: 'APPLY_LYRICS',
+          rawLyrics: lyricsInput.value,
+          convertedLyrics: sunoOutput.value
+        }, '*');
+      } else {
+        alert('SonicEtherの埋め込みコンテキスト内で実行されていません。');
+      }
+    }
+
+    const applySonicEtherBtn = document.getElementById('applySonicEtherBtn');
+    if (applySonicEtherBtn) {
+      applySonicEtherBtn.addEventListener('click', applyToSonicEther);
+    }
+    const applySonicEtherBtnRight = document.getElementById('applySonicEtherBtnRight');
+    if (applySonicEtherBtnRight) {
+      applySonicEtherBtnRight.addEventListener('click', applyToSonicEther);
+    }
+
+    function checkEmbeddedMode() {
+      if (window.parent !== window || window.location.search.includes('embed=true') || window.location.search.includes('lyrics=')) {
+        const embedContainer = document.getElementById('embedActionContainer');
+        if (embedContainer) embedContainer.style.display = 'block';
+        if (applySonicEtherBtnRight) applySonicEtherBtnRight.style.display = 'flex';
+      }
+    }
+
     function restoreSavedState() {
-      const savedInput = localStorage.getItem('lyrics_editor_input');
-      if (savedInput !== null && savedInput.trim() !== '') {
-        lyricsInput.value = savedInput;
+      const urlParams = new URLSearchParams(window.location.search);
+      const queryLyrics = urlParams.get('lyrics');
+      if (queryLyrics !== null && queryLyrics !== '') {
+        debugLog('📡 URL パラメータから歌詞データを読み込みました。');
+        lyricsInput.value = queryLyrics;
+      } else {
+        const savedInput = localStorage.getItem('lyrics_editor_input');
+        if (savedInput !== null && savedInput.trim() !== '') {
+          lyricsInput.value = savedInput;
+        }
       }
       const savedSpacing = localStorage.getItem('lyrics_editor_auto_spacing');
       if (savedSpacing !== null) {
@@ -1014,6 +1202,17 @@
       }
     }
 
+    window.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'SET_LYRICS') {
+        if (event.data.lyrics !== undefined) {
+          debugLog('📩 親ウィンドウから SET_LYRICS を受信しました。');
+          lyricsInput.value = event.data.lyrics;
+          triggerAnalysisWithReset();
+        }
+      }
+    });
+
+    checkEmbeddedMode();
     restoreSavedState();
     runAnalysis();
 

@@ -33,18 +33,24 @@ class TestLyricsRegexEditorPhase2(unittest.TestCase):
             if t.get("text") == "概念":
                 t["selected"] = "がいねん"
 
-        # 3. カッコ内演奏指示・コード進行プロンプトの完全保護テスト
-        code_lyrics = "[Intro]\n(F#maj9 - G#m7/F# - Bm7/F#)\n賑やかな ネットの海は"
+        # 3. カッコ内演奏指示・コード進行プロンプトの完全保護テスト (ネスト対応・全角半角混在対応)
+        code_lyrics = "[Intro]\n(F#maj9 - G#m7/F# - Bm7/F#)\n(A#m7 - D#7(11) - G#m7 - C#7/F)\n（全角コード - D#7(11) - G#m7）\n(半角コード - D#7（11） - G#m7)\n賑やかな ネットの海は"
         code_nodes = self.analyzer.analyze(code_lyrics)
         code_tokens = self.tokenizer.tokenize_nodes(code_nodes)
 
         # カッコ内ノードが has_choices: False かつ無傷か
-        paren_token = next(t for t in code_tokens if t["type"] == "parenthesized")
-        self.assertFalse(paren_token["has_choices"])
-        self.assertEqual(paren_token["text"], "(F#maj9 - G#m7/F# - Bm7/F#)")
+        paren_tokens = [t for t in code_tokens if t["type"] == "parenthesized"]
+        self.assertEqual(len(paren_tokens), 4)
+        self.assertEqual(paren_tokens[0]["text"], "(F#maj9 - G#m7/F# - Bm7/F#)")
+        self.assertEqual(paren_tokens[1]["text"], "(A#m7 - D#7(11) - G#m7 - C#7/F)")
+        self.assertEqual(paren_tokens[2]["text"], "（全角コード - D#7(11) - G#m7）")
+        self.assertEqual(paren_tokens[3]["text"], "(半角コード - D#7（11） - G#m7)")
 
         code_res = self.generator.generate(code_tokens, auto_spacing=True, vowel_opt=True)
         self.assertIn("(F#maj9 - G#m7/F# - Bm7/F#)", code_res)
+        self.assertIn("(A#m7 - D#7(11) - G#m7 - C#7/F)", code_res)
+        self.assertIn("（全角コード - D#7(11) - G#m7）", code_res)
+        self.assertIn("(半角コード - D#7（11） - G#m7)", code_res)
 
         # 4. 助詞『は』➔『わ』発音補正テスト (Suno発音最適化)
         ha_lyrics = "君は僕の太陽\n花は綺麗に咲く"
